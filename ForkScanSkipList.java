@@ -1,64 +1,98 @@
 // Implementation for ForkScan SkipList 
 class ForkScanSkipList implements Runnable {
-    private static final int NUM_ITERATIONS = 50;
-    private int numThreads;
-    private static final Forkscan forkScan = new Forkscan();
-    private static final SkipList skipList = new SkipList();
+    // Define the number of iterations each thread will execute
+    private static final int NUM_ITERATIONS = 50; 
     
-    public ForkScanSkipList(int numThreads) {
+    // Number of threads to be used in the program
+    private int numThreads; 
+    
+    // Initialize Forkscan for memory management
+    private static final Forkscan forkScan = new Forkscan(); 
+    
+    // Create a shared SkipList instance for all threads
+    private static final SkipList skipList = new SkipList(); 
+    
+    // Constructor to initialize the number of threads
+    public ForkScanSkipList(int numThreads) { 
         this.numThreads = numThreads;
     }
     
-    public static void reset() {
-        // Reset memory management for a clean run
+    // Method to reset Forkscan memory management before running a new test
+    public static void reset() { 
         forkScan.forkAndScan();
     }
     
     public static void main(String[] args) {
-        int N = Integer.parseInt(args[0]);
-        ForkScanSkipList instance = new ForkScanSkipList(N);
-        Thread[] threads = new Thread[N];
+        // Read the number of threads from the command-line argument
+        int N = Integer.parseInt(args[0]); 
         
-        long before = System.currentTimeMillis();
+        // Create an instance of ForkScanSkipList with N threads
+        ForkScanSkipList instance = new ForkScanSkipList(N); 
         
-        for (int i = 0; i < N; i++) {
+        // Create an array to store thread instances
+        Thread[] threads = new Thread[N]; 
+        
+        // Record the start time of execution
+        long before = System.currentTimeMillis(); 
+        
+        // Initialize threads and assign the ForkScanSkipList instance to each
+        for (int i = 0; i < N; i++) { 
             threads[i] = new Thread(instance);
         }
         
-        for (int i = 0; i < N; i++) {
+        // Start each thread
+        for (int i = 0; i < N; i++) { 
             threads[i].start();
         }
         
-        for (int i = 0; i < N; i++) {
+        // Wait for all threads to complete execution
+        for (int i = 0; i < N; i++) { 
             try {
-                threads[i].join();
+                threads[i].join(); // Ensure the main thread waits for all child threads to finish
             } catch (InterruptedException ie) {
-                System.err.println("Thread interrupted: " + ie.getMessage());
+                System.err.println("Thread interrupted: " + ie.getMessage()); // Handle interruptions
             }
         }
         
-        long after = System.currentTimeMillis();
-        long memory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        long latency = after - before;
+        // Record the end time of execution
+        long after = System.currentTimeMillis(); 
         
+        // Calculate memory usage by subtracting free memory from total memory
+        long memory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory(); 
+        
+        // Calculate execution time
+        long latency = after - before; 
+        
+        // Print the results of execution
         System.out.println("(" + N + ") SkipList, Method: ForkScan, Time: " + latency + " ms, Memory: " + memory + " KB");
     }
     
     @Override
     public void run() {
-        for (int i = 0; i < NUM_ITERATIONS; i++) {
-            Object obj = new Object();
-            int key = obj.hashCode();
-
-            Forkscan.registerObject(obj);
-            skipList.insert(key);
-            forkScan.retire(obj);
+        // Execute NUM_ITERATIONS of inserting and removing elements in the SkipList
+        for (int i = 0; i < NUM_ITERATIONS; i++) { 
+            // Create a new object to be inserted into the SkipList
+            Object obj = new Object(); 
             
-            if (skipList.search(key)) { // Ensure key exists before removing
-                skipList.remove(key);
+            // Generate a unique key using the object's hash code
+            int key = obj.hashCode(); 
+
+            // Register the object with Forkscan for memory management
+            Forkscan.registerObject(obj); 
+            
+            // Insert the generated key into the SkipList
+            skipList.insert(key); 
+            
+            // Mark the object for retirement (garbage collection)
+            forkScan.retire(obj); 
+            
+            // Search for the key in the SkipList before attempting to remove it
+            if (skipList.search(key)) {  
+                skipList.remove(key); // Remove the key if it exists
             }
 
-            Forkscan.unregisterObject(obj);
+            // Unregister the object from Forkscan after use
+            Forkscan.unregisterObject(obj); 
         }
     }
 
